@@ -273,6 +273,28 @@ The v3 SDK has built-in support for the bulk executor library, allowing you to u
 
 For more information, see [how to migrate from the bulk executor library to  bulk support in Azure Cosmos DB .NET V3 SDK](how-to-migrate-from-bulk-executor-library.md)
 
+### Custom serializer settings on operation levels
+The .NET V2 SDK allows setting *JsonSerializerSettings* in *RequestOptions* at the operational level used to deserialize the document.
+```csharp
+var result = await container.ReplaceDocumentAsync(document, new RequestOptions { JsonSerializerSettings = customSerializerSettings })
+```
+Instead of this use Stream API and apply custom serialization on the operation result:
+```csharp
+using(Response response = await this.container.ReplaceItemStreamAsync(stream, "itemId", new PartitionKey("itemPartitionKey"))
+{
+
+    using(Stream stream = response.ContentStream)
+    {
+        using (StreamReader streamReader = new StreamReader(stream))
+        {
+            // Read the stream and do dynamic deserialization based on type with a custom Serializer
+            string content =  streamReader.ReadToEndAsync();
+            SomeType result = CustomSerializer.Deserialize<SomeType>(content);
+        }
+    }
+}
+```
+
 ## Code snippet comparisons
 
 The following code snippet shows the differences in how resources are created between the .NET v2 and v3 SDKs:
